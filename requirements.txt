@@ -1,0 +1,14 @@
+torch
+torchvision
+opencv-python
+matplotlib
+numpy
+cmapy
+imageio
+cython
+pydensecrf
+#git+https://github.com/lucasb-eyer/pydensecrf.git
+chainercv
+timm
+transformers
+nltk
