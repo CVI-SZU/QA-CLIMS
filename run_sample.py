@@ -6,7 +6,7 @@ if __name__ == '__main__':
 
     parser = get_parser()
 
-    parser.set_defaults(voc12_root='/data2/tiiktak/datasets/VOC2012/')
+    parser.set_defaults(voc12_root='/path/to/VOC2012/')
     parser.set_defaults(clims_learning_rate=0.00035)
     parser.set_defaults(hyper='10,8,0.2')
     parser.set_defaults(clip='ViT-B/32')
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     if args.train_qa_clims_pass is True:
         import step.train_qa_clims
 
-        timer = pyutils.Timer('\n>>step.train_clims4_dyth:')
+        timer = pyutils.Timer('\n>>step.train_qa_clims:')
         step.train_qa_clims.run(args)
 
     if args.use_distributed_train is True:
