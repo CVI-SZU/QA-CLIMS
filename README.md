@@ -6,7 +6,7 @@ This is the official PyTorch implementation of our paper:
 > [Songhe Deng](https://github.com/Tiiiktak), [Wei Zhuo](), [Jinheng Xie](https://github.com/Sierkinhane), [Linlin Shen](https://scholar.google.com/citations?user=AZ_y9HgAAAAJ) <br>
 > Computer Vision Institute, Shenzhen University<br>
 > ACM International Conference on Multimedia, 2023 <br>
-> [[Paper]](https://dl.acm.org/doi/10.1145/3581783.3612148) [[Arxiv]](https://arxiv.org/abs/2401.09883)
+> [[Paper]](https://dl.acm.org/doi/10.1145/3581783.3612148) [[arXiv]](https://arxiv.org/abs/2401.09883)
 
 <img src="source/method_fig.png" width="800"/>
 
