@@ -11,8 +11,8 @@ if __name__ == '__main__':
     parser.set_defaults(hyper='10,8,0.2')
     parser.set_defaults(clip='ViT-B/32')
     parser.set_defaults(nce_t=0.7)
-    parser.set_defaults(vqa_fg_file='vqa/blip_vqa_fg[voc_cls_labels_img]_full+2+3+4+5_.npy')
-    parser.set_defaults(vqa_bg_file='vqa/blip_vqa_fg[voc_cls_labels_img]_full+2+3+4+5_.npy')
+    parser.set_defaults(vqa_fg_file='vqa/voc_vqa_fg_blip.npy')
+    parser.set_defaults(vqa_bg_file='vqa/voc_vqa_bg_blip.npy')
     parser.set_defaults(vqa_fg_cache_file='vqa/voc_vqa_fg_ViT-L-14_cache.npy')
     parser.set_defaults(vqa_bg_cache_file='vqa/voc_vqa_bg_ViT-L-14_cache.npy')
 
