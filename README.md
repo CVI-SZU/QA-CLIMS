@@ -45,7 +45,7 @@ To generate VQA results, please follow [third_party/README](third_party/README.m
 After that, run following command to generate VQA text features:
 
 ```shell
-python tools/gen_text_feats_cache.py voc \
+python gen_text_feats_cache.py voc \
     --vqa_fg_file vqa/voc_vqa_fg_blip.npy \
     --vqa_fg_cache_file vqa/voc_vqa_fg_blip_ViT-L-14_cache.npy \
     --vqa_bg_file vqa/voc_vqa_bg_blip.npy \
