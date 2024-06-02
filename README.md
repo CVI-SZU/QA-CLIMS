@@ -22,7 +22,7 @@ pip install -r requirements.txt
 
 ## PASCAL VOC2012
 
-You can find the following files at [here](https://drive.google.com/drive/folders/1U79Lmp-ufajPCUG7jAVyk924f9YmQSsA?usp=drive_link)
+You can find the following files at [here](https://drive.google.com/drive/folders/1U79Lmp-ufajPCUG7jAVyk924f9YmQSsA?usp=drive_link).
 
 | File                       | filename                                                                       |
 |:---------------------------|:-------------------------------------------------------------------------------|
@@ -76,7 +76,25 @@ Please follow [deeplab-pytorch](https://github.com/kazuto1011/deeplab-pytorch) o
 
 ## MS COCO2014
 
-Comming soon...
+You can find the following files at [here](https://drive.google.com/drive/folders/1U79Lmp-ufajPCUG7jAVyk924f9YmQSsA?usp=drive_link).
+
+| File                       | filename                                                                         |
+|:---------------------------|:---------------------------------------------------------------------------------|
+| FG & BG VQA results        | `coco_vqa_fg_blip.npy` <br> `coco_vqa_bg_blip.npy`                               | 
+| FG & BG VQA text features  | `coco_vqa_fg_blip_ViT-L-14_cache.npy` <br> `coco_vqa_bg_blip_ViT-L-14_cache.npy` |
+| pre-trained baseline model | `res50_cam.pth`                                                                  |
+| QA-CLIMS model             | `res50_qa_clims.pth`                                                             |
+
+
+Please place the downloaded `coco_vqa_fg_blip_ViT-L-14_cache.npy` and `coco_vqa_bg_blip_ViT-L-14_cache.npy` 
+in `vqa/`, and `res50_cam.pth` in `cam-baseline-coco14/`.
+
+Then, running the following command:
+
+```shell
+bash run_coco14_qa_clims.sh
+bash run_coco14_sem_seg.sh
+```
 
 
 ## Citation
