@@ -179,55 +179,68 @@ def run(args):
             # foreground indices
             fg_indices = torch.nonzero(label.reshape(-1) == 1, as_tuple=False).squeeze()
 
-            cam_224 = F.interpolate(x, (clip_input_size, clip_input_size), mode='bilinear', align_corners=True) \
-                .reshape(N * 80, 1, clip_input_size, clip_input_size)
-            cam_224_mask = mask_adapter(cam_224)  # [bs * 80, 1, 224, 224]
+            if len(fg_indices.shape) == 0:
+                fg_indices = fg_indices.unsqueeze(0)
 
-            img_224 = F.interpolate(img, (clip_input_size, clip_input_size), mode='bilinear', align_corners=True)
+            def train_step():
+                cam_224 = F.interpolate(x, (clip_input_size, clip_input_size), mode='bilinear', align_corners=True) \
+                    .reshape(N * 80, 1, clip_input_size, clip_input_size)
+                cam_224_mask = mask_adapter(cam_224)  # [bs * 80, 1, 224, 224]
 
-            fg_224_eval = []
-            bg_224_eval = []
-            fg_mask = []
-            bg_mask = []
-            temp_idx = torch.nonzero(label == 1, as_tuple=False)
-            for j in range(temp_idx.shape[0]):
-                fg_224_eval.append(cam_224[fg_indices[j]] * img_224[temp_idx[j, 0]])
-                bg_224_eval.append((1 - cam_224[fg_indices[j]]) * img_224[temp_idx[j, 0]])
-                fg_mask.append(cam_224_mask[fg_indices[j]])
-                bg_mask.append(1 - cam_224_mask[fg_indices[j]])
+                img_224 = F.interpolate(img, (clip_input_size, clip_input_size), mode='bilinear', align_corners=True)
 
-            fg_224_eval = torch.stack(fg_224_eval, dim=0)
-            bg_224_eval = torch.stack(bg_224_eval, dim=0)
-            fg_mask = torch.stack(fg_mask, dim=0)
-            bg_mask = torch.stack(bg_mask, dim=0)
+                fg_224_eval = []
+                bg_224_eval = []
+                fg_mask = []
+                bg_mask = []
+                temp_idx = torch.nonzero(label == 1, as_tuple=False)
+                for j in range(temp_idx.shape[0]):
+                    fg_224_eval.append(cam_224[fg_indices[j]] * img_224[temp_idx[j, 0]])
+                    bg_224_eval.append((1 - cam_224[fg_indices[j]]) * img_224[temp_idx[j, 0]])
+                    fg_mask.append(cam_224_mask[fg_indices[j]])
+                    bg_mask.append(1 - cam_224_mask[fg_indices[j]])
 
-    # ================ VQA answers prepare =================
-            img_names = pack['name']
-            fg_label_idxes = [np.nonzero(_.cpu().numpy())[0][0] for _ in fg_label[fg_indices]]
-            fg_labels = [category_dict['coco'][_] for _ in fg_label_idxes]
-            fg_image_name_idxes = fg_indices.cpu().numpy() // len(category_dict['coco'])
-            fg_image_names = [img_names[_] for _ in fg_image_name_idxes]
+                fg_224_eval = torch.stack(fg_224_eval, dim=0)
+                bg_224_eval = torch.stack(bg_224_eval, dim=0)
+                fg_mask = torch.stack(fg_mask, dim=0)
+                bg_mask = torch.stack(bg_mask, dim=0)
 
-    # ================ FG & BG masked image feature prepare =================
-            if args.use_mask_clip:
-                fg_img_features = clip_model.encode_image(fg_224_eval, m=fg_mask)
-                bg_img_features = clip_model.encode_image(bg_224_eval, m=bg_mask)
+        # ================ VQA answers prepare =================
+                img_names = pack['name']
+                fg_label_idxes = [np.nonzero(_.cpu().numpy())[0][0] for _ in fg_label[fg_indices]]
+                fg_labels = [category_dict['coco'][_] for _ in fg_label_idxes]
+                fg_image_name_idxes = fg_indices.cpu().numpy() // len(category_dict['coco'])
+                fg_image_names = [img_names[_] for _ in fg_image_name_idxes]
+
+        # ================ FG & BG masked image feature prepare =================
+                if args.use_mask_clip:
+                    fg_img_features = clip_model.encode_image(fg_224_eval, m=fg_mask)
+                    bg_img_features = clip_model.encode_image(bg_224_eval, m=bg_mask)
+                else:
+                    fg_img_features = clip_model.encode_image(fg_224_eval * fg_mask)
+                    bg_img_features = clip_model.encode_image(bg_224_eval * bg_mask)
+
+        # ================ Loss Calculate =================
+                L_FRC = torch.tensor(.0, requires_grad=True, device=cam_224.device)
+                L_BRC = torch.tensor(.0, requires_grad=True, device=cam_224.device)
+                for _i, (_lb, _im) in enumerate(zip(fg_labels, fg_image_names)):
+                    fg_vqa_feat = fg_vqa_module(_lb, _im)
+                    bg_vqa_feat = bg_vqa_tool.feats(_lb, _im)
+                    if bg_vqa_feat is None:
+                        continue
+                    L_FRC = L_FRC + NCELoss(fg_img_features[_i], fg_vqa_feat, bg_vqa_feat)
+                    L_BRC = L_BRC + NCELoss_BB(bg_img_features[_i], fg_vqa_feat, bg_vqa_feat)
+
+                L_REG = torch.mean(x)
+                return L_FRC, L_BRC, L_REG
+
+            if fg_indices.shape[0] == 0:
+                L_FRC, L_BRC, L_REG = (
+                    torch.tensor(.0, requires_grad=True, device=img.device),
+                    torch.tensor(.0, requires_grad=True, device=img.device),
+                    torch.tensor(.0, requires_grad=True, device=img.device))
             else:
-                fg_img_features = clip_model.encode_image(fg_224_eval * fg_mask)
-                bg_img_features = clip_model.encode_image(bg_224_eval * bg_mask)
-
-    # ================ Loss Calculate =================
-            L_FRC = torch.tensor(.0, requires_grad=True, device=cam_224.device)
-            L_BRC = torch.tensor(.0, requires_grad=True, device=cam_224.device)
-            for _i, (_lb, _im) in enumerate(zip(fg_labels, fg_image_names)):
-                fg_vqa_feat = fg_vqa_module(_lb, _im)
-                bg_vqa_feat = bg_vqa_tool.feats(_lb, _im)
-                if bg_vqa_feat is None:
-                    continue
-                L_FRC = L_FRC + NCELoss(fg_img_features[_i], fg_vqa_feat, bg_vqa_feat)
-                L_BRC = L_BRC + NCELoss_BB(bg_img_features[_i], fg_vqa_feat, bg_vqa_feat)
-
-            L_REG = torch.mean(x)
+                L_FRC, L_BRC, L_REG = train_step()
 
             loss = hyper[0] * L_FRC + hyper[1] * L_BRC + hyper[2] * L_REG
 
